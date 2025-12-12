@@ -14,10 +14,9 @@ import 'admin_alerts_screen.dart';
 import 'subscription_screen.dart';
 import 'points_screen.dart';
 import 'qr_detection_screen.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'news_service.dart';
+import '../models/news_item.dart' as model;
+import '../services/news_service.dart' as news_service;
 import '../widgets/latest_news_widget.dart';
-
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -238,106 +237,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
             const SizedBox(height: 30),
 
-            /* ⚠️ Latest Warning Section
-            const Text(
-              'Latest Warning',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _warningCard('2', 'Suspicious\nTransaction', Icons.error_outline, Colors.orange),
-                _warningCard('17', 'Suspicious\nPhone Number', Icons.phone, Colors.redAccent),
-                _warningCard('6', 'Email\nBlocked', Icons.email, Colors.blueAccent),
-              ],
-            ),
-            */
-
-            // import at top of home_screen.dart
-
-
-const SizedBox(height: 30),
-
-const Text(
-  'Latest Scam News',
-  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-),
-const SizedBox(height: 12),
-
-FutureBuilder<List<NewsItem>>(
-  future: NewsService.fetchFraudNews(limit: 6),
-  builder: (context, snapshot) {
-    if (snapshot.connectionState == ConnectionState.waiting) {
-      return const Center(child: SizedBox(height: 60, child: CircularProgressIndicator()));
-    }
-    if (snapshot.hasError) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(child: Text('Failed to load news: ${snapshot.error}', style: const TextStyle(color: Colors.red))),
-            TextButton(
-              onPressed: () {
-                NewsService.clearCache();
-                // trigger reload
-                (context as Element).markNeedsBuild();
-              },
-              child: const Text('Retry'),
-            )
-          ],
-        ),
-      );
-    }
-    final items = snapshot.data ?? [];
-    if (items.isEmpty) {
-      return const Text('No recent scam news found.');
-    }
-
-    return Column(
-      children: items.map((n) {
-        return GestureDetector(
-          onTap: () async {
-            final uri = Uri.tryParse(n.url);
-            if (uri != null && await canLaunchUrl(uri)) {
-              await launchUrl(uri, mode: LaunchMode.externalApplication);
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open article')));
-            }
-          },
-          child: Container(
-            margin: const EdgeInsets.symmetric(vertical: 6),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.article_outlined, size: 30, color: Colors.blueAccent),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    n.title,
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                const Icon(Icons.open_in_new, size: 18, color: Colors.grey),
-              ],
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  },
-),
-
-
-
-            const SizedBox(height: 30),
+            const LatestNewsWidget(limit: 3),
 
             // 💡 Awareness & Tips
             Row(
@@ -433,7 +333,7 @@ FutureBuilder<List<NewsItem>>(
     );
   }
 
-  // 🔹 Warning Card
+  // 🔹 Warning Card (left in file if needed elsewhere)
   Widget _warningCard(String count, String label, IconData icon, Color color) {
     return Expanded(
       child: Container(

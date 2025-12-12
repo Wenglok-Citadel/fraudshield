@@ -47,7 +47,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           .limit(1);
 
       if (subRes.isNotEmpty) {
-        _mySub = Map<String, dynamic>.from(subRes.first as Map<String, dynamic>);
+        _mySub = Map<String, dynamic>.from(subRes.first);
       } else {
         _mySub = null;
       }

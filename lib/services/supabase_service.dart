@@ -178,7 +178,6 @@ class SupabaseService {
   Future<List<Map<String, dynamic>>> getPlans() async {
     try {
       final res = await _client.from('subscription_plans').select().order('price', ascending: true);
-      if (res == null) return [];
       final list = (res as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
       return list;
     } catch (e, st) {
@@ -240,7 +239,6 @@ class SupabaseService {
     if (uid == null) return 0;
     try {
       final res = await _client.from('points_transactions').select('change').eq('user_id', uid);
-      if (res == null) return 0;
       final list = (res as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
       int sum = 0;
       for (final row in list) {
@@ -274,7 +272,6 @@ class SupabaseService {
     if (uid == null) return [];
     try {
       final res = await _client.from('points_transactions').select().eq('user_id', uid).order('created_at', ascending: false).limit(limit);
-      if (res == null) return [];
       return (res as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
     } catch (e, st) {
       log('pointsHistory error: $e\n$st');
