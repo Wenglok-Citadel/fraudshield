@@ -5,14 +5,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'providers/auth_provider.dart';
 import 'app_router.dart';
+import 'screens/root_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Load environment file
   await dotenv.load(fileName: ".env");
 
-  // Initialize Supabase
   await Supabase.initialize(
     url: dotenv.env['SUPABASE_URL']!,
     anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
@@ -31,10 +29,14 @@ class FraudShieldApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
       ],
       child: MaterialApp(
-        title: 'FraudShield',
         debugShowCheckedModeBanner: false,
+        title: 'FraudShield',
+
+        // ✅ Router
         onGenerateRoute: AppRouter.generate,
-        initialRoute: '/',   // this loads the Root() widget automatically
+
+        // ✅ Entry
+        home: const RootScreen(),
       ),
     );
   }

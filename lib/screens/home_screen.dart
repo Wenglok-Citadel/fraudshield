@@ -114,7 +114,7 @@ class _HomeScreenState extends State<HomeScreen> {
         elevation: 0,
         title: Row(
           children: [
-            Image.asset('assets/images/logo.png', height: 30),
+            Image.asset('assets/images/logo.png', height: 40),
             const SizedBox(width: 8),
             const Text(
               'FraudShield',
@@ -131,7 +131,7 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
           ),
-          IconButton(
+          /*IconButton(
             icon: const Icon(Icons.warning_amber_outlined, color: Colors.white),
             tooltip: 'Admin Alerts',
             onPressed: () {
@@ -140,7 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 MaterialPageRoute(builder: (_) => const AdminAlertsScreen()),
               );
             },
-          ),
+          ),*/
         ],
       ),
       body: SingleChildScrollView(
@@ -160,7 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ? const Text(
                             'Hi...',
                             style: TextStyle(
-                              fontSize: 24,
+                              fontSize: 30,
                               fontWeight: FontWeight.bold,
                               color: Colors.black87,
                             ),
@@ -168,7 +168,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         : Text(
                             'Hi $_userName,',
                             style: const TextStyle(
-                              fontSize: 24,
+                              fontSize: 30,
                               fontWeight: FontWeight.bold,
                               color: Colors.black87,
                             ),
@@ -177,68 +177,103 @@ class _HomeScreenState extends State<HomeScreen> {
                     const Text(
                       'Stay protected from online frauds.',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 18,
                         color: Colors.black54,
                       ),
                     ),
                   ],
                 ),
-                Image.asset('assets/images/hi_bot.png', height: 80),
+                Image.asset('assets/images/hi_bot.png', height: 130),
               ],
             ),
 
+          // 🧭 main menu
+            const SizedBox(height: 10),
+
+            const Text(
+            'What just happened?',
+            style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+          ),
+          const SizedBox(height: 10),
+// ⚡ Quick actions
+Row(
+  children: [
+    _quickAction(
+      imagePath: 'assets/icons/fraud_check.png',
+      label: 'Fraud Check',
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const FraudCheckScreen()),
+        );
+      },
+    ),
+    const SizedBox(width: 12),
+    _quickAction(
+      imagePath: 'assets/icons/shield.png',
+      label: 'Phishing',
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const PhishingProtectionScreen()),
+        );
+      },
+    ),
+  ],
+),
+          // 🧠 Situation-based helper
+            
+
+            const SizedBox(height: 12),
+
+          // 📞 Someone called me
+          _situationCard(
+          imagePath: 'assets/icons/mic.png',
+          title: 'Someone called me',
+          subtitle: 'Check suspicious calls & voices',
+          onTap: () {
+            Navigator.push(
+              context,
+            MaterialPageRoute(builder: (_) => const VoiceDetectionScreen()),
+            );
+          },
+          ),
+
+          // 🔗 I received a link / QR
+          _situationCard(
+          imagePath: 'assets/icons/qr.png',
+          title: 'I received a QR',
+          subtitle: 'Scan QR codes safely',
+          onTap: () {
+            Navigator.push(
+              context,
+            MaterialPageRoute(builder: (_) => const QRDetectionScreen()),
+            );
+          },
+        ),
+
+          // 🚨 I want to report a scam
+          _situationCard(
+          imagePath: 'assets/icons/report.png',
+          title: 'I want to report a scam',
+          subtitle: 'Help protect others',
+          onTap: () {
+            Navigator.push(
+              context,
+            MaterialPageRoute(builder: (_) => const ScamReportingScreen()),
+            );
+          },
+        ),
+
+const SizedBox(height: 16),
+
             const SizedBox(height: 20),
 
-            // 🧭 Grid menu
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 3,
-                mainAxisSpacing: 20,
-                crossAxisSpacing: 20,
-                children: [
-                  _featureCard(Icons.search, 'Fraud Checking', () {
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const FraudCheckScreen()));
-                  }),
-                  /*_featureCard(Icons.apps, 'Application Monitoring', () {
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const ApplicationMonitoringScreen()));
-                  }),*/
-                  _featureCard(Icons.report, 'Scam Reporting', () {
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const ScamReportingScreen()));
-                  }),
-                  _featureCard(Icons.mic, 'Voice Detection', () {
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const VoiceDetectionScreen()));
-                  }),
-                  /*_featureCard(Icons.face, 'Facial Detection', () {
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const FacialDetectionScreen()));
-                  }),*/
-                  _featureCard(Icons.qr_code_scanner, 'QR Detection', () {
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const QRDetectionScreen()));
-                  }),
-                  _featureCard(Icons.shield, 'Phishing Monitoring', () {
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const PhishingProtectionScreen()));
-                  }),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 30),
-
             const LatestNewsWidget(limit: 3),
-
+            const SizedBox(height: 20),
             // 💡 Awareness & Tips
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -311,27 +346,151 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // 🔹 Reusable Feature Card
-  Widget _featureCard(IconData icon, String title, VoidCallback onTap) {
-    return GestureDetector(
+  Widget _featureCard(String imagePath, String title, VoidCallback onTap) {
+  return GestureDetector(
+    onTap: onTap,
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        CircleAvatar(
+          radius: 26,
+          backgroundColor: AppColors.lightBlue.withOpacity(0.6),
+          child: Image.asset(
+            imagePath,
+            width: 28,
+            height: 28,
+            fit: BoxFit.cover,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          title,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _quickAction({
+  required String imagePath,
+  required String label,
+  required VoidCallback onTap,
+}) {
+  return Expanded(
+    child: GestureDetector(
       onTap: onTap,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircleAvatar(
-            radius: 26,
-            backgroundColor: AppColors.lightBlue.withOpacity(0.6),
-            child: Icon(icon, color: AppColors.primaryBlue, size: 28),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-          ),
-        ],
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: const [
+            BoxShadow(color: Colors.black12, blurRadius: 6),
+          ],
+        ),
+        child: Column(
+          children: [
+            Image.asset(
+              imagePath,
+              width: 26,
+              height: 26,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
-    );
-  }
+    ),
+  );
+}
+
+
+
+Widget _situationCard({
+  required String imagePath,
+  required String title,
+  required String subtitle,
+  required VoidCallback onTap,
+  bool isPrimary = false,
+}) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isPrimary ? AppColors.primaryBlue : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: const [
+            BoxShadow(color: Colors.black12, blurRadius: 6),
+          ],
+        ),
+        child: Row(
+          children: [
+        CircleAvatar(
+              radius: 26,
+              backgroundColor: isPrimary
+        ? AppColors.primaryBlue
+        : Colors.grey.shade100,
+          child: Image.asset(
+          imagePath,
+          width: 45,
+          height: 45,
+          fit: BoxFit.cover,
+          color: isPrimary ? Colors.white : null, // optional
+        ),
+        ),
+
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: isPrimary ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isPrimary
+                          ? Colors.white70
+                          : Colors.black54,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios,
+              size: 14,
+              color: isPrimary ? Colors.white70 : Colors.black38,
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
 
   // 🔹 Warning Card (left in file if needed elsewhere)
   Widget _warningCard(String count, String label, IconData icon, Color color) {

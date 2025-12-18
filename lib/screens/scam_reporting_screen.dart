@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants/colors.dart';
+import 'report_history_screen.dart';
 
 class ScamReportingScreen extends StatefulWidget {
   const ScamReportingScreen({super.key});
@@ -13,7 +14,16 @@ class _ScamReportingScreenState extends State<ScamReportingScreen> {
   final _descController = TextEditingController();
   String _selectedCategory = 'Investment Scam';
   bool _reportSent = false;
+  String _selectedEvidenceType = 'Phone Number';
+  final _evidenceController = TextEditingController();
+  String _reportType = 'Phone';
 
+final List<String> _reportTypes = [
+  'Phone',
+  'Message',
+  'Document',
+  'Others',
+];
   @override
   Widget build(BuildContext context) {
     if (_reportSent) {
@@ -72,13 +82,28 @@ class _ScamReportingScreenState extends State<ScamReportingScreen> {
     return Scaffold(
       backgroundColor: AppColors.lightBlue,
       appBar: AppBar(
-        backgroundColor: AppColors.primaryBlue,
-        title: const Text(
-          'Scam Reporting',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
+  backgroundColor: AppColors.primaryBlue,
+  title: const Text(
+    'Scam Reporting',
+    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+  ),
+  iconTheme: const IconThemeData(color: Colors.white),
+  actions: [
+    IconButton(
+      icon: const Icon(Icons.history),
+      tooltip: 'Report History',
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const ReportHistoryScreen(),
+          ),
+        );
+      },
+    ),
+  ],
+),
+
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -87,21 +112,79 @@ class _ScamReportingScreenState extends State<ScamReportingScreen> {
             const SizedBox(height: 10),
 
             // 📱 Phone Number Field
-            TextField(
-              controller: _phoneController,
-              keyboardType: TextInputType.phone,
-              decoration: InputDecoration(
-                labelText: 'Phone Number',
-                filled: true,
-                fillColor: Colors.white,
-                prefixIcon: const Icon(Icons.phone_outlined),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
+            // 🧾 Evidence Type
+Text(
+  'What are you reporting?',
+  style: TextStyle(
+    fontWeight: FontWeight.w600,
+    color: AppColors.primaryBlue,
+    fontSize: 16,
+  ),
+),
+const SizedBox(height: 8),
+
+Container(
+  padding: const EdgeInsets.symmetric(horizontal: 16),
+  decoration: BoxDecoration(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(12),
+  ),
+  child: DropdownButton<String>(
+    value: _reportType,
+    isExpanded: true,
+    underline: const SizedBox(),
+    items: _reportTypes.map((type) {
+      return DropdownMenuItem(
+        value: type,
+        child: Text(type),
+      );
+    }).toList(),
+    onChanged: (value) {
+      setState(() {
+        _reportType = value!;
+      });
+    },
+  ),
+),
+
+const SizedBox(height: 16),
+
+if (_reportType == 'Phone') ...[
+  TextField(
+    controller: _phoneController,
+    keyboardType: TextInputType.phone,
+    decoration: InputDecoration(
+      labelText: 'Phone Number',
+      filled: true,
+      fillColor: Colors.white,
+      prefixIcon: const Icon(Icons.phone_outlined),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+    ),
+  ),
+],
+
+if (_reportType == 'Others') ...[
+  TextField(
+    controller: _descController,
+    maxLines: 3,
+    decoration: InputDecoration(
+      labelText: 'Describe the issue',
+      filled: true,
+      fillColor: Colors.white,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+    ),
+  ),
+],
+
+
+
+const SizedBox(height: 20),
 
             // 🏷️ Scam Category
             Text(
@@ -191,14 +274,16 @@ class _ScamReportingScreenState extends State<ScamReportingScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  if (_phoneController.text.isEmpty ||
-                      _descController.text.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Please fill in all fields.')),
-                    );
-                    return;
+                  bool isPhoneValid =
+                    _reportType != 'Phone' || _phoneController.text.trim().isNotEmpty;
+
+                  if (!isPhoneValid || _descController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Please fill in all required fields.')),
+                  );
+                  return;
                   }
+
 
                   setState(() {
                     _reportSent = true;
@@ -217,6 +302,7 @@ class _ScamReportingScreenState extends State<ScamReportingScreen> {
                 ),
               ),
             ),
+            
           ],
         ),
       ),

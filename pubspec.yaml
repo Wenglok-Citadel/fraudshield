@@ -7,11 +7,16 @@ environment:
   sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
+  shared_preferences: ^2.2.2
+  lottie: ^3.1.0
   flutter:
     sdk: flutter
+  
 
   # Networking / parsing / open links
-  http: ^1.1.0
+  #http: ^1.1.0
+  http: any
+  xml: ^6.1.0
   html: 0.15.6
   url_launcher: ^6.3.2
 
@@ -47,4 +52,16 @@ flutter:
     - assets/images/tip2.png
     - assets/images/tip3.png
     - assets/images/tip4.png
+    - assets/images/news_placeholder.png
+    - assets/images/onboard_secure.png
+    - assets/images/onboard_report.png
+    - assets/images/onboard_alert.png
+    - assets/icons/qr.png
+    - assets/icons/fraud_check.png
+    - assets/icons/shield.png
+    - assets/icons/mic.png
+    - assets/icons/report.png
+    - assets/animations/onboard_secure.json
+    - assets/animations/onboard_alert.json
+    - assets/animations/onboard_report.json
     - .env

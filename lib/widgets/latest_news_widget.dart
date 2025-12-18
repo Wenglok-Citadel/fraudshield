@@ -37,17 +37,11 @@ class _LatestNewsWidgetState extends State<LatestNewsWidget> {
 
     try {
       final list = await _newsService.fetchLatest(limit: widget.limit);
-      debugPrint('NEWS-DEBUG: fetched ${list.length} items');
-      for (var i = 0; i < list.length; i++) {
-        final it = list[i];
-        debugPrint('NEWS-DEBUG[$i]: title="${it.title}" url="${it.url}" image="${it.image}"');
-      }
       if (!mounted) return;
       setState(() {
         _items = list;
       });
-    } catch (e, st) {
-      debugPrint('NEWS-DEBUG: fetch error: $e\n$st');
+    } catch (e) {
       if (!mounted) return;
       setState(() {
         _error = e.toString();
@@ -60,12 +54,43 @@ class _LatestNewsWidgetState extends State<LatestNewsWidget> {
     }
   }
 
+  Widget _placeholderImage(double height) {
+      return Container(
+      height: height,
+      color: Colors.grey[200],
+      child: Center(
+        child: Icon(Icons.article_outlined, size: height * 0.32, color: Colors.grey[500]),
+      ),
+    );
+  }
+
+  Future<void> _openLink(String link) async {
+    final uri = Uri.tryParse(link);
+    if (uri == null) return;
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open article')));
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open article')));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // responsive height: fixed but conservative to avoid overflow
+    final containerHeight = 150.0;
+
     if (_loading) {
-      return const SizedBox(
-        height: 170,
-        child: Center(child: CircularProgressIndicator()),
+      return SizedBox(
+        height: containerHeight,
+        child: const Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -103,7 +128,7 @@ class _LatestNewsWidgetState extends State<LatestNewsWidget> {
         ),
         const SizedBox(height: 8),
         SizedBox(
-          height: 170,
+          height: containerHeight,
           child: ListView.separated(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             scrollDirection: Axis.horizontal,
@@ -111,24 +136,14 @@ class _LatestNewsWidgetState extends State<LatestNewsWidget> {
             separatorBuilder: (_, __) => const SizedBox(width: 12),
             itemBuilder: (context, i) {
               final it = _items[i];
+              final imageUrl = (it.image != null && it.image!.isNotEmpty) ? it.image! : null;
+
               return GestureDetector(
-                onTap: () async {
-                  final link = it.url;
-                  if (link == null || link.isEmpty) return;
-                  final uri = Uri.tryParse(link);
-                  if (uri == null) return;
-                  try {
-                    if (await canLaunchUrl(uri)) {
-                      await launchUrl(uri, mode: LaunchMode.externalApplication);
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open article')));
-                    }
-                  } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open article')));
-                  }
+                onTap: () {
+                  if ((it.url ?? '').isNotEmpty) _openLink(it.url);
                 },
                 child: Container(
-                  width: 320,
+                  width: 300,
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
@@ -137,32 +152,28 @@ class _LatestNewsWidgetState extends State<LatestNewsWidget> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // image
-                      (it.image != null && it.image!.isNotEmpty)
-                          ? ClipRRect(
-                              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                              child: Image.network(
-                                it.image!,
-                                width: double.infinity,
-                                height: 100,
-                                fit: BoxFit.cover,
-                                loadingBuilder: (context, child, loadingProgress) {
-                                  if (loadingProgress == null) return child;
-                                  return Container(height: 100, alignment: Alignment.center, child: const CircularProgressIndicator(strokeWidth: 2));
-                                },
-                                errorBuilder: (_, __, ___) => Container(height: 100, color: Colors.grey[200]),
-                              ),
-                            )
-                          : Container(height: 100, color: Colors.grey[200]),
+                      // IMAGE (fixed height + placeholder fallback)
+                     ClipRRect(
+  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+  child: SizedBox(
+    height: 96,
+    width: double.infinity,
+    child: Image.asset(
+      'assets/images/news_placeholder.png',
+      fit: BoxFit.cover,
+    ),
+  ),
+),
+
+
+                      // TITLE ONLY (compact)
                       Padding(
-                        padding: const EdgeInsets.all(10.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(it.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 6),
-                            Text(it.excerpt ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.black54, fontSize: 12)),
-                          ],
+                        padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+                        child: Text(
+                          it.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                         ),
                       ),
                     ],
