@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants/colors.dart';
+import '../services/risk_evaluator.dart';
 
 class FraudCheckScreen extends StatefulWidget {
   const FraudCheckScreen({super.key});
@@ -51,26 +52,19 @@ class _FraudCheckScreenState extends State<FraudCheckScreen> {
             const SizedBox(height: 30),
 
             // 💠 Selection buttons
-            Text(
-              'Try (Scam)',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AppColors.primaryBlue,
-              ),
-            ),
-            const SizedBox(height: 10),
 
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _buildTypeButton('Phone No'),
                 _buildTypeButton('URL'),
+                _buildTypeButton('Bank Acc'),
                 _buildTypeButton('Document'),
+
               ],
             ),
 
-            const SizedBox(height: 30),
+            const SizedBox(height: 20),
 
             // 🧾 Input field
             TextField(
@@ -105,25 +99,28 @@ class _FraudCheckScreenState extends State<FraudCheckScreen> {
                 onPressed: () {
                   if (_inputController.text.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Please enter a value')),
+                    const SnackBar(content: Text('Please enter a value')),
                     );
-                    return;
+                  return;
                   }
 
-                  // Random mock detection
-                  final isSuspicious = DateTime.now().millisecond % 2 == 0;
+                final result = RiskEvaluator.evaluate(
+                type: _selectedType,
+                value: _inputController.text.trim(),
+                );
 
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => CheckResultScreen(
-                        type: _selectedType,
-                        value: _inputController.text,
-                        isSuspicious: isSuspicious,
-                      ),
-                    ),
-                  );
-                },
+            Navigator.push(
+              context,
+             MaterialPageRoute(
+              builder: (_) => CheckResultScreen(
+              type: _selectedType,
+              value: _inputController.text.trim(),
+              result: result,
+              ),
+            ),
+          );
+        },
+
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryBlue,
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -216,81 +213,102 @@ class _FraudCheckScreenState extends State<FraudCheckScreen> {
 class CheckResultScreen extends StatelessWidget {
   final String type;
   final String value;
-  final bool isSuspicious;
+  final RiskResult result;
 
   const CheckResultScreen({
     super.key,
     required this.type,
     required this.value,
-    required this.isSuspicious,
+    required this.result,
   });
 
   @override
   Widget build(BuildContext context) {
-    final icon = isSuspicious ? Icons.warning_rounded : Icons.verified_user;
-    final color = isSuspicious ? Colors.redAccent : Colors.green;
-    final title = isSuspicious
-        ? 'Suspicious Activity Detected!'
-        : 'Everything Looks Safe!';
-    final message = isSuspicious
-        ? 'This ${type.toLowerCase()} appears to be suspicious. Please proceed with caution.'
-        : 'No signs of fraud detected for this ${type.toLowerCase()}.';
+    final isHigh = result.level == 'high';
+    final isMedium = result.level == 'medium';
+
+    final icon = isHigh
+        ? Icons.warning_rounded
+        : isMedium
+            ? Icons.error_outline
+            : Icons.verified_user;
+
+    final color = isHigh
+        ? Colors.red
+        : isMedium
+            ? Colors.orange
+            : Colors.green;
+
+    final title = isHigh
+        ? 'High Risk Detected'
+        : isMedium
+            ? 'Suspicious Activity'
+            : 'Looks Safe';
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColors.primaryBlue,
-        title: const Text('Result'),
+        title: const Text('Fraud Check Result'),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: color, size: 100),
-              const SizedBox(height: 20),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: color,
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 90),
+            const SizedBox(height: 20),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              '${type.toLowerCase()} checked',
+              style: const TextStyle(color: Colors.black54),
+            ),
+            const SizedBox(height: 16),
+
+            // 🔢 Score
+            Text(
+              'Risk Score: ${result.score}/100',
+              style: const TextStyle(fontSize: 16),
+            ),
+
+            const SizedBox(height: 20),
+
+            // 📋 Reasons
+            ...result.reasons.map(
+              (r) => Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  children: [
+                    Icon(Icons.circle, size: 6, color: color),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(r)),
+                  ],
                 ),
               ),
-              const SizedBox(height: 10),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: AppColors.greyText,
-                ),
+            ),
+
+            const SizedBox(height: 40),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryBlue,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
               ),
-              const SizedBox(height: 20),
-              Text(
-                value,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: AppColors.darkText,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 40),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryBlue,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
-                ),
-                child: const Text('Back'),
-              ),
-            ],
-          ),
+              child: const Text('Back'),
+            ),
+          ],
         ),
       ),
     );
   }
 }
+

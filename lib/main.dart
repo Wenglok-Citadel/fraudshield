@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
+import 'providers/theme_provider.dart';
 import 'providers/auth_provider.dart';
 import 'app_router.dart';
 import 'screens/root_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await dotenv.load(fileName: ".env");
 
   await Supabase.initialize(
@@ -17,6 +18,25 @@ Future<void> main() async {
   );
 
   runApp(const FraudShieldApp());
+  MultiProvider(
+  providers: [
+    ChangeNotifierProvider(create: (_) => ThemeProvider()),
+    ChangeNotifierProvider(create: (_) => AuthProvider()),
+  ],
+  
+  child: Consumer<ThemeProvider>(
+    builder: (_, theme, __) {
+      return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        themeMode: theme.mode,
+        theme: ThemeData.light(),
+        darkTheme: ThemeData.dark(),
+        home: const RootScreen(),
+      );
+    },
+  ),
+);
+
 }
 
 class FraudShieldApp extends StatelessWidget {
@@ -31,13 +51,11 @@ class FraudShieldApp extends StatelessWidget {
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'FraudShield',
-
-        // ✅ Router
         onGenerateRoute: AppRouter.generate,
-
-        // ✅ Entry
         home: const RootScreen(),
       ),
     );
   }
 }
+
+

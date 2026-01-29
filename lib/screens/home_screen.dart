@@ -1,21 +1,16 @@
-// lib/screens/home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:lottie/lottie.dart';
 import '../constants/colors.dart';
+import 'subscription_screen.dart';
+import 'points_screen.dart';
 import 'account_screen.dart';
 import 'fraud_check_screen.dart';
 import 'scam_reporting_screen.dart';
 import 'phishing_protection_screen.dart';
-//import 'application_monitoring_screen.dart';
 import 'voice_detection_screen.dart';
-//import 'facial_detection_screen.dart';
-import 'awareness_tips_screen.dart';
-import 'admin_alerts_screen.dart';
-import 'subscription_screen.dart';
-import 'points_screen.dart';
 import 'qr_detection_screen.dart';
-import '../models/news_item.dart' as model;
-import '../services/news_service.dart' as news_service;
+import 'awareness_tips_screen.dart';
 import '../widgets/latest_news_widget.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -28,9 +23,10 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
-  // NEW: profile fields
   String _userName = 'User';
   bool _loadingProfile = true;
+
+  late final List<Widget> _pages;
 
   @override
   void initState() {
@@ -38,72 +34,106 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadProfile();
   }
 
-  // NEW: loads profile from `profiles` table
   Future<void> _loadProfile() async {
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user == null) {
-      setState(() {
-        _userName = 'User';
-        _loadingProfile = false;
-      });
-      return;
-    }
+  final supabase = Supabase.instance.client;
+  final user = supabase.auth.currentUser;
 
-    try {
-      final row = await Supabase.instance.client
-          .from('profiles')
-          .select()
-          .eq('id', user.id)
-          .maybeSingle();
-
-      if (!mounted) return;
-
-      if (row != null && (row['full_name'] as String?)?.trim().isNotEmpty == true) {
-        setState(() {
-          _userName = row['full_name'] as String;
-          _loadingProfile = false;
-        });
-      } else {
-        // fallback to email username part
-        final email = user.email ?? '';
-        final nickname = email.contains('@') ? email.split('@').first : 'User';
-        setState(() {
-          _userName = nickname;
-          _loadingProfile = false;
-        });
-      }
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _userName = 'User';
-        _loadingProfile = false;
-      });
-    }
+  if (user == null) {
+    setState(() {
+      _userName = 'User';
+      _loadingProfile = false;
+    });
+    return;
   }
 
-  // UPDATED: await navigation and refresh profile when returning from Account
-  void _onNavTap(int index) async {
+  try {
+    final row = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .maybeSingle();
+
+    // 🔹 If profile exists and name is valid
+    if (row != null && (row['full_name'] as String?)?.trim().isNotEmpty == true) {
+      _userName = row['full_name'];
+      print('Greeting username: $_userName');
+
+    } 
+    
+    else {
+      // 🔹 Fallback to email prefix
+      _userName = user.email?.split('@').first ?? 'User';
+
+      // 🔹 OPTIONAL: auto-create / update profile
+      await supabase.from('profiles').upsert({
+        'id': user.id,
+        'full_name': _userName,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+    }
+  } catch (e) {
+    _userName = user.email?.split('@').first ?? 'User';
+  }
+
+  if (mounted) {
+    setState(() => _loadingProfile = false);
+  }
+}
+
+
+  void _onNavTap(int index) {
     setState(() => _selectedIndex = index);
 
-    if (index == 1) {
-      await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const SubscriptionScreen()),
-      );
-    } else if (index == 2) {
-      await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const PointsScreen()),
-      );
-    } else if (index == 3) {
-      // await and refresh profile after returning
-      await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const AccountScreen()),
-      );
-      _loadProfile();
+    if (index == 0) {
+      _loadProfile(); // refresh greeting
     }
   }
+
+  @override
+Widget build(BuildContext context) {
+  return Scaffold(
+    body: IndexedStack(
+      index: _selectedIndex,
+      children: [
+        _HomeTab(
+          userName: _userName,
+          loading: _loadingProfile,
+        ),
+        const SubscriptionScreen(),
+        const PointsScreen(),
+        const AccountScreen(),
+      ],
+    ),
+    bottomNavigationBar: BottomNavigationBar(
+      currentIndex: _selectedIndex,
+      onTap: _onNavTap,
+      type: BottomNavigationBarType.fixed,
+      selectedItemColor: AppColors.primaryBlue,
+      unselectedItemColor: Colors.grey,
+      items: const [
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+        BottomNavigationBarItem(icon: Icon(Icons.subscriptions), label: 'Subscription'),
+        BottomNavigationBarItem(icon: Icon(Icons.stars), label: 'Points'),
+        BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Account'),
+      ],
+    ),
+  );
+}
+
+}
+
+////////////////////////////////////////////////////////////////
+/// HOME TAB CONTENT (UI ONLY)
+////////////////////////////////////////////////////////////////
+
+class _HomeTab extends StatelessWidget {
+   final String userName;
+  final bool loading;
+
+  const _HomeTab({
+    required this.userName,
+    required this.loading,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -114,7 +144,7 @@ class _HomeScreenState extends State<HomeScreen> {
         elevation: 0,
         title: Row(
           children: [
-            Image.asset('assets/images/logo.png', height: 40),
+            Image.asset('assets/images/logo.png', height: 36),
             const SizedBox(width: 8),
             const Text(
               'FraudShield',
@@ -131,16 +161,6 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
           ),
-          /*IconButton(
-            icon: const Icon(Icons.warning_amber_outlined, color: Colors.white),
-            tooltip: 'Admin Alerts',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AdminAlertsScreen()),
-              );
-            },
-          ),*/
         ],
       ),
       body: SingleChildScrollView(
@@ -148,133 +168,119 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 👋 Greeting + bot
+            // 👋 GREETING
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // dynamic greeting
-                    _loadingProfile
-                        ? const Text(
-                            'Hi...',
-                            style: TextStyle(
-                              fontSize: 30,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          )
-                        : Text(
-                            'Hi $_userName,',
-                            style: const TextStyle(
-                              fontSize: 30,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Stay protected from online frauds.',
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: Colors.black54,
-                      ),
-                    ),
-                  ],
+                  loading
+                    ? const Text(
+                      'Hi',
+                  style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+                    )
+                    : Text(
+                      'Hi $userName,',
+                  style: const TextStyle(
+                  fontSize: 30,
+                  fontWeight: FontWeight.bold,
+                  ),
                 ),
-                Image.asset('assets/images/hi_bot.png', height: 130),
+              ],
+                ),
+                SizedBox(
+                  height: 120,
+                  child: Lottie.asset('assets/animations/greeting_bot.json',
+                  repeat: true,
+                  animate: true,
+                  fit: BoxFit.contain,
+                  ),
+                ),
+
               ],
             ),
 
-          // 🧭 main menu
-            const SizedBox(height: 10),
-
             const Text(
-            'What just happened?',
-            style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-          ),
-          const SizedBox(height: 10),
-// ⚡ Quick actions
-Row(
-  children: [
-    _quickAction(
-      imagePath: 'assets/icons/fraud_check.png',
-      label: 'Fraud Check',
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const FraudCheckScreen()),
-        );
-      },
-    ),
-    const SizedBox(width: 12),
-    _quickAction(
-      imagePath: 'assets/icons/shield.png',
-      label: 'Phishing',
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const PhishingProtectionScreen()),
-        );
-      },
-    ),
-  ],
-),
-          // 🧠 Situation-based helper
-            
+              'Stay protected from online frauds.',
+              style: TextStyle(fontSize: 20),
+            ),
+            const SizedBox(height: 15),
 
+            // ⚡ QUICK ACTIONS
+            const Text(
+              'What just happened?',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 12),
+            
+            Row(
+              children: [
+                _quickAction(
+                  context,
+                  'assets/icons/fraud_check.png',
+                  'Fraud Check',
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const FraudCheckScreen()),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                _quickAction(
+                  context,
+                  'assets/icons/shield.png',
+                  'Phishing',
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const PhishingProtectionScreen()),
+                  ),
+                ),
+              ],
+            ),
 
-          // 📞 Someone called me
-          _situationCard(
-          imagePath: 'assets/icons/mic.png',
-          title: 'Someone called me',
-          subtitle: 'Check suspicious calls & voices',
-          onTap: () {
-            Navigator.push(
+            const SizedBox(height: 16),
+
+            // 📞 SITUATION CARDS
+            _situationCard(
               context,
-            MaterialPageRoute(builder: (_) => const VoiceDetectionScreen()),
-            );
-          },
-          ),
+              imagePath: 'assets/icons/mic.png',
+              title: 'Someone called me',
+              subtitle: 'Check suspicious calls & voices',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const VoiceDetectionScreen()),
+              ),
+            ),
 
-          // 🔗 I received a link / QR
-          _situationCard(
-          imagePath: 'assets/icons/qr.png',
-          title: 'I received a QR',
-          subtitle: 'Scan QR codes safely',
-          onTap: () {
-            Navigator.push(
+            _situationCard(
               context,
-            MaterialPageRoute(builder: (_) => const QRDetectionScreen()),
-            );
-          },
-        ),
+              imagePath: 'assets/icons/qr.png',
+              title: 'I received a QR',
+              subtitle: 'Scan QR codes safely',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const QRDetectionScreen()),
+              ),
+            ),
 
-          // 🚨 I want to report a scam
-          _situationCard(
-          imagePath: 'assets/icons/report.png',
-          title: 'I want to report a scam',
-          subtitle: 'Help protect others',
-          onTap: () {
-            Navigator.push(
+            _situationCard(
               context,
-            MaterialPageRoute(builder: (_) => const ScamReportingScreen()),
-            );
-          },
-        ),
-
-const SizedBox(height: 16),
+              imagePath: 'assets/icons/report.png',
+              title: 'I want to report a scam',
+              subtitle: 'Help protect others',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ScamReportingScreen()),
+              ),
+            ),
 
             const SizedBox(height: 20),
 
             const LatestNewsWidget(limit: 3),
+
             const SizedBox(height: 20),
-            // 💡 Awareness & Tips
+
+            // 💡 AWARENESS
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -283,24 +289,20 @@ const SizedBox(height: 16),
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const AwarenessTipsScreen()),
-                    );
-                  },
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AwarenessTipsScreen()),
+                  ),
                   child: const Text(
                     'Learn More',
-                    style: TextStyle(
-                      color: Colors.blueAccent,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: TextStyle(color: Colors.blueAccent),
                   ),
                 ),
               ],
             ),
 
             const SizedBox(height: 12),
+
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -311,14 +313,17 @@ const SizedBox(height: 16),
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: Image.asset('assets/images/tip_image.png',
-                        width: 70, height: 70, fit: BoxFit.cover),
+                    child: Image.asset(
+                      'assets/images/tip_image.png',
+                      width: 70,
+                      height: 70,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   const Expanded(
                     child: Text(
                       'Avoid clicking unknown links or downloading attachments from unverified sources.',
-                      style: TextStyle(fontSize: 14, color: Colors.black87),
                     ),
                   ),
                 ],
@@ -327,60 +332,20 @@ const SizedBox(height: 16),
           ],
         ),
       ),
-
-      // 🔹 Bottom Navigation Bar
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onNavTap,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primaryBlue,
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.subscriptions), label: 'Subscription'),
-          BottomNavigationBarItem(icon: Icon(Icons.stars), label: 'Points'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Account'),
-        ],
-      ),
     );
   }
-
-  // 🔹 Reusable Feature Card
-  Widget _featureCard(String imagePath, String title, VoidCallback onTap) {
-  return GestureDetector(
-    onTap: onTap,
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        CircleAvatar(
-          radius: 26,
-          backgroundColor: AppColors.lightBlue.withOpacity(0.6),
-          child: Image.asset(
-            imagePath,
-            width: 28,
-            height: 28,
-            fit: BoxFit.cover,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          title,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    ),
-  );
 }
 
-Widget _quickAction({
-  required String imagePath,
-  required String label,
-  required VoidCallback onTap,
-}) {
+////////////////////////////////////////////////////////////////
+/// SMALL REUSABLE WIDGETS
+////////////////////////////////////////////////////////////////
+
+Widget _quickAction(
+  BuildContext context,
+  String imagePath,
+  String label,
+  VoidCallback onTap,
+) {
   return Expanded(
     child: GestureDetector(
       onTap: onTap,
@@ -389,26 +354,13 @@ Widget _quickAction({
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
-          boxShadow: const [
-            BoxShadow(color: Colors.black12, blurRadius: 6),
-          ],
+          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6)],
         ),
         child: Column(
           children: [
-            Image.asset(
-              imagePath,
-              width: 26,
-              height: 26,
-              fit: BoxFit.contain,
-            ),
+            Image.asset(imagePath, width: 26, height: 26),
             const SizedBox(height: 6),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            Text(label, style: const TextStyle(fontSize: 13)),
           ],
         ),
       ),
@@ -416,9 +368,8 @@ Widget _quickAction({
   );
 }
 
-
-
-Widget _situationCard({
+Widget _situationCard(
+  BuildContext context, {
   required String imagePath,
   required String title,
   required String subtitle,
@@ -434,26 +385,15 @@ Widget _situationCard({
         decoration: BoxDecoration(
           color: isPrimary ? AppColors.primaryBlue : Colors.white,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: const [
-            BoxShadow(color: Colors.black12, blurRadius: 6),
-          ],
+          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6)],
         ),
         child: Row(
           children: [
-        CircleAvatar(
+            CircleAvatar(
               radius: 26,
-              backgroundColor: isPrimary
-        ? AppColors.primaryBlue
-        : Colors.grey.shade100,
-          child: Image.asset(
-          imagePath,
-          width: 45,
-          height: 45,
-          fit: BoxFit.cover,
-          color: isPrimary ? Colors.white : null, // optional
-        ),
-        ),
-
+              backgroundColor: isPrimary ? Colors.white : Colors.grey.shade100,
+              child: Image.asset(imagePath, width: 28),
+            ),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
@@ -464,7 +404,7 @@ Widget _situationCard({
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: isPrimary ? Colors.white : Colors.black87,
+                      color: isPrimary ? Colors.white : Colors.black,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -472,9 +412,7 @@ Widget _situationCard({
                     subtitle,
                     style: TextStyle(
                       fontSize: 13,
-                      color: isPrimary
-                          ? Colors.white70
-                          : Colors.black54,
+                      color: isPrimary ? Colors.white70 : Colors.black54,
                     ),
                   ),
                 ],
@@ -490,45 +428,4 @@ Widget _situationCard({
       ),
     ),
   );
-}
-
-  // 🔹 Warning Card (left in file if needed elsewhere)
-  Widget _warningCard(String count, String label, IconData icon, Color color) {
-    return Expanded(
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 5,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 26),
-            const SizedBox(height: 6),
-            Text(
-              count,
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12, color: Colors.black54),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

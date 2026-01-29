@@ -114,7 +114,7 @@ final List<String> _reportTypes = [
             // 📱 Phone Number Field
             // 🧾 Evidence Type
 Text(
-  'What are you reporting?',
+  'Reports may be shared with relevant authorities for review',
   style: TextStyle(
     fontWeight: FontWeight.w600,
     color: AppColors.primaryBlue,
@@ -255,7 +255,7 @@ const SizedBox(height: 20),
                     content: Text('File upload feature coming soon')));
               },
               icon: const Icon(Icons.upload_file),
-              label: const Text('Upload Evidence Attachment'),
+              label: const Text('Upload Evidence (Optional)'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: AppColors.primaryBlue,

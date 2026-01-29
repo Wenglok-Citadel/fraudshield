@@ -21,7 +21,7 @@ class _RootScreenState extends State<RootScreen> {
 
   if (!mounted) return;
 
-  // ALWAYS onboarding first
+  // ALWAYS onboarding first..
   Navigator.pushReplacementNamed(context, '/onboarding');
 }
 

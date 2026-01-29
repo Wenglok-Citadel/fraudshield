@@ -49,20 +49,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         child: Column(
           children: [
             // 🔹 Skip
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: _finish,
-                child: const Text('Skip'),
-              ),
+            SizedBox(
+              height: 48,
+              child: _currentIndex != _items.length - 1
+                  ? Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: _finish,
+                        child: const Text('Skip'),
+                      ),
+                    )
+                  : const SizedBox.shrink(),
             ),
-
             // 🔹 Pages
             Expanded(
               child: PageView.builder(
                 controller: _controller,
                 itemCount: _items.length,
-                onPageChanged: (i) {
+                onPageChanged: (i) async {
                   setState(() => _currentIndex = i);
                 },
                 itemBuilder: (context, i) {
@@ -74,6 +78,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       children: [
                         Lottie.asset(
                           item.animation,
+                          key: ValueKey(item.animation),
                           height: 260,
                           fit: BoxFit.contain,
                           errorBuilder: (_, __, ___) =>
@@ -126,35 +131,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             const SizedBox(height: 24),
 
             // 🔹 Button
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _currentIndex == _items.length - 1
-                      ? _finish
-                      : () {
-                          _controller.nextPage(
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.ease,
-                          );
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryBlue,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+            if (_currentIndex == _items.length - 1)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => _currentIndex == _items.length - 1
+                        ? _finish()
+                        : _controller.animateToPage(
+                            _items.length - 1,
+                            duration: const Duration(milliseconds: 350),
+                            curve: Curves.easeOut,
+                          ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryBlue,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     ),
-                  ),
-                  child: Text(
-                    _currentIndex == _items.length - 1
-                        ? 'Get Started'
-                        : 'Next',
-                    style: const TextStyle(fontSize: 18),
+                    child: const Text(
+                      'Get Started',
+                      style: TextStyle(fontSize: 18),
+                    ),
                   ),
                 ),
               ),
-            ),
 
             const SizedBox(height: 20),
           ],

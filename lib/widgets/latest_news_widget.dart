@@ -1,11 +1,8 @@
 // lib/widgets/latest_news_widget.dart
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
-// alias the model file (preferred for types)
+import '../screens/article_reader_screen.dart';
 import '../models/news_item.dart' as model;
-
-// alias the service file (preferred for helpers)
 import '../services/news_service.dart' as news_service;
 
 class LatestNewsWidget extends StatefulWidget {
@@ -20,16 +17,27 @@ class _LatestNewsWidgetState extends State<LatestNewsWidget> {
   final news_service.NewsService _newsService = news_service.NewsService();
 
   bool _loading = true;
-  List<model.NewsItem> _items = [];
   String? _error;
+  List<model.NewsItem> _items = [];
+  String _placeholderForIndex(int index) {
+    const placeholders = [
+      'assets/images/news_placeholder_1.png',
+      'assets/images/news_placeholder_2.png',
+      'assets/images/news_placeholder_3.png',
+      'assets/images/news_placeholder_4.png',
+    ];
+
+    return placeholders[index % placeholders.length];
+  }
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _loadNews();
   }
 
-  Future<void> _load() async {
+  // ================= LOAD NEWS =================
+  Future<void> _loadNews() async {
     setState(() {
       _loading = true;
       _error = null;
@@ -38,54 +46,35 @@ class _LatestNewsWidgetState extends State<LatestNewsWidget> {
     try {
       final list = await _newsService.fetchLatest(limit: widget.limit);
       if (!mounted) return;
-      setState(() {
-        _items = list;
-      });
+      setState(() => _items = list);
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _error = e.toString();
-      });
+      setState(() => _error = e.toString());
     } finally {
       if (!mounted) return;
-      setState(() {
-        _loading = false;
-      });
+      setState(() => _loading = false);
     }
   }
 
-  Widget _placeholderImage(double height) {
-      return Container(
-      height: height,
-      color: Colors.grey[200],
-      child: Center(
-        child: Icon(Icons.article_outlined, size: height * 0.32, color: Colors.grey[500]),
+  // ================= OPEN ARTICLE (IN APP) =================
+  void _openArticle(model.NewsItem item) {
+    if ((item.url ?? '').isEmpty) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ArticleReaderScreen(
+          title: item.title,
+          url: item.url!,
+        ),
       ),
     );
   }
 
-  Future<void> _openLink(String link) async {
-    final uri = Uri.tryParse(link);
-    if (uri == null) return;
-    try {
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open article')));
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open article')));
-      }
-    }
-  }
-
+  // ================= UI =================
   @override
   Widget build(BuildContext context) {
-    // responsive height: fixed but conservative to avoid overflow
-    final containerHeight = 150.0;
+    const containerHeight = 150.0;
 
     if (_loading) {
       return SizedBox(
@@ -96,11 +85,16 @@ class _LatestNewsWidgetState extends State<LatestNewsWidget> {
 
     if (_error != null) {
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Row(
           children: [
-            Expanded(child: Text('News error: $_error', style: const TextStyle(color: Colors.red))),
-            TextButton(onPressed: _load, child: const Text('Retry')),
+            Expanded(
+              child: Text(
+                'News error: $_error',
+                style: const TextStyle(color: Colors.red),
+              ),
+            ),
+            TextButton(onPressed: _loadNews, child: const Text('Retry')),
           ],
         ),
       );
@@ -108,12 +102,11 @@ class _LatestNewsWidgetState extends State<LatestNewsWidget> {
 
     if (_items.isEmpty) {
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Expanded(child: Text('No recent scam news found.')),
-            TextButton(onPressed: _load, child: const Text('Refresh')),
+            TextButton(onPressed: _loadNews, child: const Text('Refresh')),
           ],
         ),
       );
@@ -123,8 +116,11 @@ class _LatestNewsWidgetState extends State<LatestNewsWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 12.0),
-          child: Text('Latest Scam News', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          padding: EdgeInsets.symmetric(horizontal: 12),
+          child: Text(
+            'Latest Scam News',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
         ),
         const SizedBox(height: 8),
         SizedBox(
@@ -134,46 +130,48 @@ class _LatestNewsWidgetState extends State<LatestNewsWidget> {
             scrollDirection: Axis.horizontal,
             itemCount: _items.length,
             separatorBuilder: (_, __) => const SizedBox(width: 12),
-            itemBuilder: (context, i) {
-              final it = _items[i];
-              final imageUrl = (it.image != null && it.image!.isNotEmpty) ? it.image! : null;
+            itemBuilder: (context, index) {
+              final item = _items[index];
 
               return GestureDetector(
-                onTap: () {
-                  if ((it.url ?? '').isNotEmpty) _openLink(it.url);
-                },
+                onTap: () => _openArticle(item),
                 child: Container(
                   width: 300,
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
-                    boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6)],
+                    boxShadow: const [
+                      BoxShadow(color: Colors.black12, blurRadius: 6),
+                    ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // IMAGE (fixed height + placeholder fallback)
-                     ClipRRect(
-  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-  child: SizedBox(
-    height: 96,
-    width: double.infinity,
-    child: Image.asset(
-      'assets/images/news_placeholder.png',
-      fit: BoxFit.cover,
-    ),
-  ),
-),
+                      // IMAGE
+                      ClipRRect(
+                        borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(12)),
+                        child: SizedBox(
+                          height: 96,
+                          width: double.infinity,
+                          child: Image.asset(
+                            _placeholderForIndex(index),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
 
-
-                      // TITLE ONLY (compact)
+                      // TITLE
                       Padding(
                         padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
                         child: Text(
-                          it.title,
+                          item.title,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
                         ),
                       ),
                     ],

@@ -9,6 +9,9 @@ environment:
 dependencies:
   shared_preferences: ^2.2.2
   lottie: ^3.1.0
+  webview_flutter: ^4.7.0
+  webview_flutter_android: ^3.16.0
+  webview_flutter_wkwebview: ^3.13.0
   flutter:
     sdk: flutter
   
@@ -52,7 +55,10 @@ flutter:
     - assets/images/tip2.png
     - assets/images/tip3.png
     - assets/images/tip4.png
-    - assets/images/news_placeholder.png
+    - assets/images/news_placeholder_1.png
+    - assets/images/news_placeholder_2.png
+    - assets/images/news_placeholder_3.png
+    - assets/images/news_placeholder_4.png
     - assets/images/onboard_secure.png
     - assets/images/onboard_report.png
     - assets/images/onboard_alert.png
@@ -62,6 +68,11 @@ flutter:
     - assets/icons/mic.png
     - assets/icons/report.png
     - assets/animations/onboard_secure.json
-    - assets/animations/onboard_alert.json
     - assets/animations/onboard_report.json
+    - assets/animations/onboard_alert.json
+    - assets/animations/pet_dog.json
+    - assets/animations/pet_cat.json
+    - assets/animations/pet_owl.json
+    - assets/animations/pet_fish.json
+    - assets/animations/greeting_bot.json
     - .env
