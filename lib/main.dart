@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import 'providers/theme_provider.dart';
 import 'providers/auth_provider.dart';
 import 'app_router.dart';
@@ -18,25 +19,6 @@ Future<void> main() async {
   );
 
   runApp(const FraudShieldApp());
-  MultiProvider(
-  providers: [
-    ChangeNotifierProvider(create: (_) => ThemeProvider()),
-    ChangeNotifierProvider(create: (_) => AuthProvider()),
-  ],
-  
-  child: Consumer<ThemeProvider>(
-    builder: (_, theme, __) {
-      return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        themeMode: theme.mode,
-        theme: ThemeData.light(),
-        darkTheme: ThemeData.dark(),
-        home: const RootScreen(),
-      );
-    },
-  ),
-);
-
 }
 
 class FraudShieldApp extends StatelessWidget {
@@ -46,16 +28,26 @@ class FraudShieldApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
       ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'FraudShield',
-        onGenerateRoute: AppRouter.generate,
-        home: const RootScreen(),
+      child: Consumer<ThemeProvider>(
+        builder: (_, theme, __) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: 'FraudShield',
+
+            // ✅ THEME CONNECTION
+            themeMode: theme.mode,
+            theme: ThemeData.light(),
+            darkTheme: ThemeData.dark(),
+
+            // ✅ ROUTING
+            onGenerateRoute: AppRouter.generate,
+            home: const RootScreen(),
+          );
+        },
       ),
     );
   }
 }
-
-

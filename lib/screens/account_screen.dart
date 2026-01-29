@@ -210,9 +210,9 @@ class _AccountScreenState extends State<AccountScreen> {
                   const SizedBox(height: 20),
                   SwitchListTile(
                     value: theme.isDark,
-                    onChanged: (_) => theme.toggle(true),
+                    onChanged: (value) => theme.toggle(value),
                     title: const Text('Dark Mode'),
-                  ), 
+                  ),
                 ],
               ),
             );
