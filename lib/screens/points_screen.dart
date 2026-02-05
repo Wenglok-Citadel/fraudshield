@@ -1,9 +1,7 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../constants/colors.dart';
 import '../services/supabase_service.dart';
 import 'points_history_screen.dart';
 
@@ -14,38 +12,23 @@ class PointsScreen extends StatefulWidget {
   State<PointsScreen> createState() => _PointsScreenState();
 }
 
-class _PointsScreenState extends State<PointsScreen>
-    with SingleTickerProviderStateMixin {
+class _PointsScreenState extends State<PointsScreen> {
   bool _loading = true;
   int _balance = 0;
-  String? _petType;
-  bool _claimedToday = false;
 
-  static const double _orbSize = 340;
-
-  late AnimationController _spinCtrl;
+  String _petType = 'dog';
   bool _petJump = false;
 
   @override
   void initState() {
     super.initState();
-    _spinCtrl =
-        AnimationController(vsync: this, duration: const Duration(seconds: 14))
-          ..repeat();
     _init();
-  }
-
-  @override
-  void dispose() {
-    _spinCtrl.dispose();
-    super.dispose();
   }
 
   // ================= INIT =================
   Future<void> _init() async {
     setState(() => _loading = true);
     await _loadPet();
-    await _checkDailyReward();
     await _loadPoints();
     if (!mounted) return;
     setState(() => _loading = false);
@@ -53,39 +36,24 @@ class _PointsScreenState extends State<PointsScreen>
 
   Future<void> _loadPet() async {
     final prefs = await SharedPreferences.getInstance();
-    _petType = prefs.getString('pet_type');
-    _claimedToday = prefs.getString('last_daily_reward') == _todayKey();
+    _petType = prefs.getString('pet_type') ?? 'dog';
   }
 
   Future<void> _loadPoints() async {
     _balance = await SupabaseService.instance.getMyPoints();
   }
 
-  Future<void> _checkDailyReward() async {
-    if (_petType == null || _claimedToday) return;
-    final prefs = await SharedPreferences.getInstance();
-    await SupabaseService.instance.addPoints(
-      change: 1,
-      reason: 'Daily pet care bonus',
-    );
-    await prefs.setString('last_daily_reward', _todayKey());
-    _claimedToday = true;
-  }
-
-  String _todayKey() =>
-      DateTime.now().toIso8601String().substring(0, 10);
-
-  String _petAnimation() =>
-      'assets/animations/pet_${_petType ?? 'dog'}.json';
+  String _petAnimation() => 'assets/animations/pet_$_petType.json';
 
   // ================= UI =================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lightBlue,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const Text('Points'),
-        backgroundColor: AppColors.primaryBlue,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.pets),
@@ -95,157 +63,154 @@ class _PointsScreenState extends State<PointsScreen>
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                const SizedBox(height: 24),
-
-                // ⭐ BALANCE
-                Column(
+          : Container(
+              width: double.infinity,
+              height: double.infinity,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFF9ED6FF),
+                    Color(0xFFEAF6FF),
+                  ],
+                ),
+              ),
+              child: SafeArea(
+                child: Column(
                   children: [
+                    const SizedBox(height: 12),
+
+                    // ⭐ CURRENT POINTS
                     const Text(
                       'CURRENT POINTS',
                       style: TextStyle(
-                        fontSize: 12,
-                        letterSpacing: 1.2,
-                        color: Colors.black54,
+                        fontSize: 14,
+                        letterSpacing: 1.3,
                         fontWeight: FontWeight.w600,
+                        color: Color(0xFF355C7D),
                       ),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       '$_balance',
                       style: const TextStyle(
-                        fontSize: 40,
+                        fontSize: 44,
                         fontWeight: FontWeight.bold,
+                        color: Color(0xFF1F3A5F),
                       ),
                     ),
-                  ],
-                ),
 
-                const SizedBox(height: 16),
+                    const SizedBox(height: 20),
 
-                // 🫧 ANIMATED ORB
-                SizedBox(
-                  height: _orbSize + 100,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      // 🔁 Rotating dashed ring
-                      AnimatedBuilder(
-                        animation: _spinCtrl,
-                        builder: (_, __) {
-                          return Transform.rotate(
-                            angle: _spinCtrl.value * 2 * pi,
-                            child: CustomPaint(
-                              size: const Size(_orbSize, _orbSize),
-                              painter: _RingPainter(),
+                    // 🐾 PET + TAP ANIMATION
+                    Expanded(
+                      child: Center(
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() => _petJump = true);
+                            Future.delayed(
+                              const Duration(milliseconds: 500),
+                              () => setState(() => _petJump = false),
+                            );
+                          },
+                          child: AnimatedSlide(
+                            offset: _petJump
+                                ? const Offset(0, -0.12)
+                                : Offset.zero,
+                            duration: const Duration(milliseconds: 450),
+                            curve: Curves.easeOutBack,
+                            child: AnimatedScale(
+                              scale: _petJump ? 1.08 : 1.0,
+                              duration:
+                                  const Duration(milliseconds: 450),
+                              child: Stack(
+                                alignment: Alignment.topRight,
+                                children: [
+                                  Lottie.asset(
+                                    _petAnimation(),
+                                    height: 260,
+                                    repeat: true,
+                                  ),
+                                  if (_petJump)
+                                    const Positioned(
+                                      top: 12,
+                                      right: 16,
+                                      child: Text(
+                                        '❤️',
+                                        style:
+                                            TextStyle(fontSize: 36),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // 🎁 REDEEM POINTS
+                    Padding(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 24),
+                      child: _gradientButton(
+                        icon: Icons.card_giftcard,
+                        text: 'Redeem Points Now',
+                        gradient: const LinearGradient(
+                          colors: [
+                            Color(0xFFEC6EAD),
+                            Color(0xFF8F6ED5),
+                          ],
+                        ),
+                        onTap: () {
+                          // TODO: Navigate to redeem / subscription screen
+                        },
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // 🕒 VIEW HISTORY
+                    Padding(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 24),
+                      child: _gradientButton(
+                        icon: Icons.history,
+                        text: 'View Points History',
+                        gradient: const LinearGradient(
+                          colors: [
+                            Color(0xFF6A85F1),
+                            Color(0xFF8F6ED5),
+                          ],
+                        ),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  const PointsHistoryScreen(),
                             ),
                           );
                         },
                       ),
+                    ),
 
-                      // 🌈 Pulsing orb
-                      TweenAnimationBuilder<double>(
-                        tween: Tween(begin: 0.95, end: 1.05),
-                        duration: const Duration(seconds: 2),
-                        curve: Curves.easeInOut,
-                        builder: (_, scale, child) {
-                          return Transform.scale(scale: scale, child: child);
-                        },
-                        child: CustomPaint(
-                          size: const Size(_orbSize - 30, _orbSize - 30),
-                          painter: _OrbPainter(),
-                        ),
-                      ),
+                    const SizedBox(height: 16),
 
-                      
-                     /* CustomPaint(
-                        size: const Size(_orbSize + 40, _orbSize + 40),
-                        painter: _CurvedTextPainter(
-                          text: _claimedToday
-                              ? '✦ Your pet is happy today ✦'
-                              : '✧ Come back tomorrow ✧',
-                        ),
-                      ),
-                      */
-
-                      // 🐾 PET (tap jump)
-                      GestureDetector(
-                        onTap: () {
-                          setState(() => _petJump = true);
-                          Future.delayed(const Duration(milliseconds: 500),
-                              () => setState(() => _petJump = false));
-                        },
-                        child: AnimatedSlide(
-                          offset: _petJump
-                              ? const Offset(0, -0.15)
-                              : Offset.zero,
-                          duration: const Duration(milliseconds: 500),
-                          curve: Curves.easeOutBack,
-                          child: AnimatedScale(
-                            scale: _petJump ? 1.1 : 1.0,
-                            duration: const Duration(milliseconds: 500),
-                            child: Stack(
-                              alignment: Alignment.topRight,
-                              children: [
-                                Lottie.asset(
-                                  _petAnimation(),
-                                  height: 240,
-                                ),
-                                if (_petJump)
-                                  const Positioned(
-                                    top: 10,
-                                    right: 10,
-                                    child: Text('❤️',
-                                        style: TextStyle(fontSize: 35)),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const Spacer(),
-
-                // 🔘 VIEW HISTORY
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const PointsHistoryScreen(),
-                          ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryBlue,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                      ),
-                      child: const Text(
-                        'View Points History',
-                        style: TextStyle(fontSize: 16),
+                    // ✨ FOOTNOTE
+                    const Text(
+                      '✨ Login daily to keep your pet happy',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF5B7C99),
                       ),
                     ),
-                  ),
-                ),
 
-                const SizedBox(height: 16),
-                const Text(
-                  '✨ Login daily to keep your pet happy',
-                  style: TextStyle(color: Colors.black45),
+                    const SizedBox(height: 24),
+                  ],
                 ),
-                const SizedBox(height: 20),
-              ],
+              ),
             ),
     );
   }
@@ -270,96 +235,53 @@ class _PointsScreenState extends State<PointsScreen>
   }
 }
 
-////////////////////////////////////////////////////////////////
-/// PAINTERS
-////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+/// GRADIENT BUTTON
+////////////////////////////////////////////////////////////
 
-class _OrbPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final c = Offset(size.width / 2, size.height / 2);
-    final r = size.width / 2;
-    final paint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          Colors.white.withOpacity(0.9),
-          Colors.blue.withOpacity(0.15),
+Widget _gradientButton({
+  required IconData icon,
+  required String text,
+  required Gradient gradient,
+  required VoidCallback onTap,
+}) {
+  return GestureDetector(
+    onTap: onTap,
+    child: Container(
+      height: 56,
+      decoration: BoxDecoration(
+        gradient: gradient,
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
         ],
-      ).createShader(Rect.fromCircle(center: c, radius: r));
-    canvas.drawCircle(c, r, paint);
-  }
-
-  @override
-  bool shouldRepaint(_) => false;
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: Colors.white),
+          const SizedBox(width: 10),
+          Text(
+            text,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
-class _RingPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.blue.withOpacity(0.3)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2
-      ..strokeCap = StrokeCap.round;
-    canvas.drawArc(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      0,
-      2 * pi,
-      false,
-      paint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_) => false;
-}
-
-class _CurvedTextPainter extends CustomPainter {
-  final String text;
-  _CurvedTextPainter({required this.text});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final radius = size.width / 2 - 20;
-    final center = Offset(size.width / 2, size.height / 2);
-    const style = TextStyle(
-      fontSize: 16,
-      fontWeight: FontWeight.bold,
-      fontStyle: FontStyle.italic,
-      color: Colors.orange,
-    );
-
-    final chars = text.split('');
-    final angleStep = pi / (chars.length + 2);
-    double angle = pi * 1.2;
-
-    for (final ch in chars) {
-      final tp = TextPainter(
-        text: TextSpan(text: ch, style: style),
-        textDirection: TextDirection.ltr,
-      )..layout();
-
-      final pos = Offset(
-        center.dx + radius * cos(angle) - tp.width / 2,
-        center.dy + radius * sin(angle) - tp.height / 2,
-      );
-
-      canvas.save();
-      canvas.translate(pos.dx, pos.dy);
-      canvas.rotate(angle + pi / 2);
-      tp.paint(canvas, Offset.zero);
-      canvas.restore();
-      angle += angleStep;
-    }
-  }
-
-  @override
-  bool shouldRepaint(_) => true;
-}
-
-////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
 /// PET CHOOSER (BOTTOM SHEET)
-////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
 
 class PetChooser extends StatelessWidget {
   final Function(String) onSelect;
@@ -381,7 +303,6 @@ class PetChooser extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -415,4 +336,3 @@ class PetChooser extends StatelessWidget {
     );
   }
 }
-

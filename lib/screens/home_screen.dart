@@ -133,209 +133,231 @@ class _HomeTab extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        elevation: 0,
-        title: Row(
-          children: [
-            Image.asset('assets/images/logo.png', height: 36),
-            const SizedBox(width: 8),
-            const Text(
-              'FraudShield',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('No new notifications')),
-              );
-            },
+Widget build(BuildContext context) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+
+  return Scaffold(
+    extendBodyBehindAppBar: true,
+    appBar: AppBar(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      surfaceTintColor: Colors.transparent,
+      title: Row(
+        children: [
+          Image.asset('assets/images/logo.png', height: 36),
+          const SizedBox(width: 8),
+          const Text(
+            'FraudShield',
+            style: TextStyle(fontWeight: FontWeight.bold),
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 👋 GREETING
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    loading
-                        ? const Text(
-                            'Hi',
-                            style: TextStyle(
-                                fontSize: 30, fontWeight: FontWeight.bold),
-                          )
-                        : Text(
-                            loading ? 'Hi' : 'Hi $userName,',
-                            style: Theme.of(context)
-                                .textTheme
-                                .headlineMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                          ),
-                  ],
-                ),
-                SizedBox(
-                  height: 120,
-                  child: Lottie.asset(
-                    'assets/animations/greeting_bot.json',
-                    repeat: true,
-                    animate: true,
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              ],
-            ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.notifications_none),
+          onPressed: () {},
+        ),
+      ],
+    ),
 
-            const Text(
-              'Stay protected from online frauds.',
-              style: TextStyle(fontSize: 20),
-            ),
-            const SizedBox(height: 15),
+    body: Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color.fromARGB(188, 173, 201, 238), // top
+            Color.fromARGB(223, 232, 235, 245), // bottom 
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+      ),
 
-            // ⚡ QUICK ACTIONS
-            const Text(
-              'What just happened?',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-
-            Row(
-              children: [
-                _quickAction(
-                  context,
-                  'assets/icons/fraud_check.png',
-                  'Fraud Check',
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const FraudCheckScreen()),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                _quickAction(
-                  context,
-                  'assets/icons/shield.png',
-                  'Phishing',
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const PhishingProtectionScreen()),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-
-            // 📞 SITUATION CARDS
-            _situationCard(
-              context,
-              imagePath: 'assets/icons/mic.png',
-              title: 'Someone called me',
-              subtitle: 'Check suspicious calls & voices',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const VoiceDetectionScreen()),
-              ),
-            ),
-
-            _situationCard(
-              context,
-              imagePath: 'assets/icons/qr.png',
-              title: 'I received a QR',
-              subtitle: 'Scan QR codes safely',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const QRDetectionScreen()),
-              ),
-            ),
-
-            _situationCard(
-              context,
-              imagePath: 'assets/icons/report.png',
-              title: 'I want to report a scam',
-              subtitle: 'Help protect others',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ScamReportingScreen()),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            const LatestNewsWidget(limit: 3),
-
-            const SizedBox(height: 20),
-
-            // 💡 AWARENESS
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Awareness & Tips',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                GestureDetector(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const AwarenessTipsScreen()),
-                  ),
-                  child: const Text(
-                    'Learn More',
-                    style: TextStyle(color: Colors.blueAccent),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 👋 GREETING
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.asset(
-                      'assets/images/tip_image.png',
-                      width: 70,
-                      height: 70,
-                      fit: BoxFit.cover,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          loading ? 'Hi' : 'Hi $userName 👋',
+                          style: const TextStyle(
+                            fontSize: 30,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1F2937),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'Let’s keep your digital life safe today!',
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Color(0xFF6B7280),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Text(
-                      'Avoid clicking unknown links or downloading attachments from unverified sources.',
+                  SizedBox(
+                    height: 90,
+                    child: Lottie.asset(
+                      'assets/animations/greeting_bot.json',
+                      repeat: true,
                     ),
                   ),
                 ],
               ),
-            ),
-          ],
+
+              const SizedBox(height: 18),
+
+              // ⚡ QUICK ACTIONS
+              const Text(
+                'What just happened?',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+
+              Row(
+                children: [
+                  _quickAction(
+                    context,
+                    'assets/icons/fraud_check.png',
+                    'Fraud Check',
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const FraudCheckScreen(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  _quickAction(
+                    context,
+                    'assets/icons/shield.png',
+                    'Phishing',
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const PhishingProtectionScreen(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              _situationCard(
+                context,
+                imagePath: 'assets/icons/mic.png',
+                title: 'Someone called me',
+                subtitle: 'Check suspicious calls & voices',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const VoiceDetectionScreen(),
+                  ),
+                ),
+              ),
+
+              _situationCard(
+                context,
+                imagePath: 'assets/icons/qr.png',
+                title: 'I received a QR',
+                subtitle: 'Scan QR codes safely',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const QRDetectionScreen(),
+                  ),
+                ),
+              ),
+
+              _situationCard(
+                context,
+                imagePath: 'assets/icons/report.png',
+                title: 'I want to report a scam',
+                subtitle: 'Help protect others',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ScamReportingScreen(),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+              const LatestNewsWidget(limit: 3),
+              const SizedBox(height: 20),
+
+              // 💡 AWARENESS
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Awareness & Tips',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const AwarenessTipsScreen(),
+                      ),
+                    ),
+                    child: const Text(
+                      'Learn More',
+                      style: TextStyle(color: Colors.blueAccent),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.asset(
+                        'assets/images/tip_image.png',
+                        width: 70,
+                        height: 70,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text(
+                        'Avoid clicking unknown links or downloading attachments from unverified sources.',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 ////////////////////////////////////////////////////////////////
@@ -348,32 +370,53 @@ Widget _quickAction(
   String label,
   VoidCallback onTap,
 ) {
+  final bool isFraud = label == 'Fraud Check';
+  final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
   return Expanded(
     child: GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        padding: const EdgeInsets.symmetric(vertical: 18),
         decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(14),
+          gradient: LinearGradient(
+            colors: isFraud
+                ? [
+                    const Color.fromARGB(255, 255, 255, 255),
+                    const Color.fromARGB(255, 255, 255, 255),
+                  ]
+                : [
+                    const Color.fromARGB(255, 255, 255, 255),
+                    const Color.fromARGB(255, 255, 255, 255),
+                  ],
+          ),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Theme.of(context).shadowColor.withOpacity(0.15),
-              blurRadius: 6,
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         child: Column(
           children: [
-            Image.asset(imagePath, width: 26, height: 26),
-            const SizedBox(height: 6),
-            Text(label),
+            Image.asset(imagePath, width: 28, height: 28),
+            const SizedBox(height: 10),
+            Text(
+              label,
+              style: TextStyle(
+                color: isDark ? Colors.white : const Color(0xFF222222),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ],
         ),
       ),
     ),
   );
 }
+
 
 Widget _situationCard(
   BuildContext context, {
@@ -383,6 +426,7 @@ Widget _situationCard(
   required VoidCallback onTap,
   bool isPrimary = false,
 }) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
   return Padding(
     padding: const EdgeInsets.only(bottom: 12),
     child: GestureDetector(
@@ -390,11 +434,15 @@ Widget _situationCard(
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isPrimary
-              ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6)],
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -414,20 +462,16 @@ Widget _situationCard(
                     title,
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: isPrimary
-                          ? Theme.of(context).cardColor
-                          : Theme.of(context).textTheme.bodyLarge!.color,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : const Color(0xFF222222),
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
                     style: TextStyle(
-                      fontSize: 13,
-                      color: isPrimary
-                          ? Theme.of(context).cardColor
-                          : Theme.of(context).textTheme.bodyLarge!.color,
+                      fontSize: 14,
+                      color: isDark ? Colors.white70 : const Color(0xFF6B7280),
                     ),
                   ),
                 ],

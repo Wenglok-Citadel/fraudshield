@@ -49,6 +49,10 @@ class FraudShieldApp extends StatelessWidget {
               brightness: Brightness.dark,
               scaffoldBackgroundColor: const Color(0xFF0F172A),
               cardColor: const Color(0xFF1E293B),
+              appBarTheme: const AppBarTheme(
+                surfaceTintColor: Colors.transparent,
+                backgroundColor: Colors.transparent,
+              ),
             ),
 
             // ✅ ROUTING
